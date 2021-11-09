@@ -177,47 +177,6 @@ for i in range(0, 4):
 print()
 print(a.score)
 
-while True:
-    if keyboard.is_pressed('w'):
-        a.merge('up')
-        for i in range(0, 4):
-            for j in range(0, 4):
-                print(str(a.sq[i][j]).center(4), end='')
-                print(' ', end='')
-            print('')
-        print(a.score)
-        print()
-        time.sleep(0.1)
-    elif keyboard.is_pressed('a'):
-        a.merge('left')
-        for i in range(0, 4):
-            for j in range(0, 4):
-                print(str(a.sq[i][j]).center(4), end='')
-                print(' ', end='')
-            print('')
-        print(a.score)
-        print()
-        time.sleep(0.1)
-    elif keyboard.is_pressed('s'):
-        a.merge('down')
-        for i in range(0, 4):
-            for j in range(0, 4):
-                print(str(a.sq[i][j]).center(4), end='')
-                print(' ', end='')
-            print('')
-        print(a.score)
-        print()
-        time.sleep(0.1)
-    elif keyboard.is_pressed('d'):
-        a.merge('right')
-        for i in range(0, 4):
-            for j in range(0, 4):
-                print(str(a.sq[i][j]).center(4), end='')
-                print(' ', end='')
-            print('')
-        print(a.score)
-        print()
-        time.sleep(0.1)
-    time.sleep(0.1)
+
 
 # 게임오버 만들기
