@@ -1,6 +1,11 @@
+from asyncio.windows_events import NULL
 import random
 import copy
-from dico import Client
+import math
+import dico
+import asyncio
+from dico.model import emoji
+from dico.model.channel import Message
 from dico_interaction import InteractionClient, InteractionContext
 
 class UndefinedDirectionError(Exception):
@@ -142,7 +147,7 @@ class Class2048:
                     cnt -= 1
             self.sq[i] = line
 
-    def merge(self, direction): # 정상적으로 턴 넘기기에 성공하면 0, 게임이 끝났다면 -1
+    def merge(self, direction):
         if(self.over):
             raise FinishedGameError
         if(direction == 'up'):
@@ -174,15 +179,105 @@ class Class2048:
         
         return 0
 
+# Bot Area
+
 token = ""
 with open('token.txt', 'r') as f:
     token = f.read()
 
-client = Client(token)
+client = dico.Client(token)
 interaction = InteractionClient(client=client, auto_register_commands=True, guild_id_lock=670522521682182155)
 
-@interaction.slash(name="test", description="A Simple Responding Command")
-async def hello(ctx: InteractionContext):
-    await ctx.send("Hello, World!")
+def create_msg(m):
+    buffer = ""
+    emojis = ['',
+            '<:2:904349077746118706>',
+            '<:4:904349077750292520>',
+            '<:8:904349078345895946>',
+            '<:16:904349077737734144>',
+            '<:32:904349077674786816>',
+            '<:64:904349077716738068>',
+            '<:128:904349077960028191>',
+            '<:256:904349077813219328>',
+            '<:512:904349078421377044>',
+            '<:1024:904349077788049428>',
+            '<:2048:904349077062447114>']
+    for i in range(0, 4):
+        for j in range(0, 4):
+            if(m[i][j] == 0):
+                buffer += '⬛'
+            else:
+                buffer += emojis[int(math.log2(m[i][j]))]
+        buffer += '\n'
+    return buffer
+
+emoji_left = {"id": NULL, "name": "⬅️"}
+emoji_up = {"id": NULL, "name": "⬆️"}
+emoji_down = {"id": NULL, "name": "⬇️"}
+emoji_right = {"id": NULL, "name": "➡️"}
+emoji_cancel = {"id": NULL, "name": "✖️"}
+
+async def interact(game):
+    while True:
+        resp = await interaction.wait_interaction(timeout=600)
+        if not resp.type.message_component or not resp.data.component_type.button:
+            return
+        res = 0
+        if(resp.data.custom_id == 'left'):
+            res = game.merge('left')
+        elif(resp.data.custom_id == 'up'):
+            res = game.merge('up')
+        elif(resp.data.custom_id == 'down'):
+            res = game.merge('down')
+        elif(resp.data.custom_id == 'right'):
+            res = game.merge('right')
+        left_button = dico.Button(style=dico.ButtonStyles.SECONDARY, emoji=emoji_left, custom_id="left", disabled=True)
+        up_button = dico.Button(style=dico.ButtonStyles.SECONDARY, emoji=emoji_up, custom_id="up", disabled=True)
+        down_button = dico.Button(style=dico.ButtonStyles.SECONDARY, emoji=emoji_down, custom_id="down", disabled=True)
+        right_button = dico.Button(style=dico.ButtonStyles.SECONDARY, emoji=emoji_right, custom_id="right", disabled=True)
+        cancel_button = dico.Button(style=dico.ButtonStyles.DANGER, emoji=emoji_cancel, custom_id="cancel", disabled=True)
+        row = dico.ActionRow(left_button, up_button, down_button, right_button, cancel_button)
+        if(resp.data.custom_id == 'cancel'):
+            await resp.send(create_msg(game.sq) + '\nThis game has cancelled. Score: ' + str(game.score), update_message=True, components=[row])
+            return
+        if(res == -1):
+            await resp.send(create_msg(game.sq) + '\nGame Over! Your final score is: ' + str(game.score), update_message=True, components=[row])
+            return
+        await resp.send(create_msg(game.sq), update_message=True)
+
+@interaction.slash(name="start", description="Starts a new game.")
+async def start(ctx: InteractionContext):
+    left_button = dico.Button(style=dico.ButtonStyles.SECONDARY, emoji=emoji_left, custom_id="left")
+    up_button = dico.Button(style=dico.ButtonStyles.SECONDARY, emoji=emoji_up, custom_id="up")
+    down_button = dico.Button(style=dico.ButtonStyles.SECONDARY, emoji=emoji_down, custom_id="down")
+    right_button = dico.Button(style=dico.ButtonStyles.SECONDARY, emoji=emoji_right, custom_id="right")
+    cancel_button = dico.Button(style=dico.ButtonStyles.DANGER, emoji=emoji_cancel, custom_id="cancel")
+    row = dico.ActionRow(left_button, up_button, down_button, right_button, cancel_button)
+    g = Class2048()
+    await ctx.send(create_msg(g.sq), components=[row])
+    try:
+        await asyncio.wait_for(interact(g), timeout=None)
+    except asyncio.TimeoutError:
+        await ctx.send('대충 타임아웃')
 
 client.run()
+
+'''
+<:2:904349077746118706>
+<:4:904349077750292520>
+<:8:904349078345895946>
+<:16:904349077737734144>
+<:32:904349077674786816>
+<:64:904349077716738068>
+<:128:904349077960028191>
+<:256:904349077813219328>
+<:512:904349078421377044>
+<:1024:904349077788049428>
+<:2048:904349077062447114>
+⬛
+'''
+
+'''
+타임아웃 부분 수정하기
+여러 명 동시에 플레이 가능하도록, 안 겹치도록 수정하기
+'''
