@@ -1,5 +1,7 @@
 import random
 import copy
+from dico import Client
+from dico_interaction import InteractionClient, InteractionContext
 
 class UndefinedDirectionError(Exception):
     def __init__(self):
@@ -171,3 +173,16 @@ class Class2048:
             return -1
         
         return 0
+
+token = ""
+with open('token.txt', 'r') as f:
+    token = f.read()
+
+client = Client(token)
+interaction = InteractionClient(client=client)
+
+@interaction.slash(name="test", description="A Simple Responding Command")
+async def hello(ctx: InteractionContext):
+    await ctx.send("Hello, World!")
+
+client.run()
