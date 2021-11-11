@@ -179,7 +179,7 @@ with open('token.txt', 'r') as f:
     token = f.read()
 
 client = Client(token)
-interaction = InteractionClient(client=client)
+interaction = InteractionClient(client=client, auto_register_commands=True, guild_id_lock=670522521682182155)
 
 @interaction.slash(name="test", description="A Simple Responding Command")
 async def hello(ctx: InteractionContext):
