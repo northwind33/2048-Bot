@@ -1,11 +1,13 @@
 import random
 import copy
-import time
-import keyboard
 
 class UndefinedDirectionError(Exception):
     def __init__(self):
         super().__init__('UndefinedDirectionError')
+
+class FinishedGameError(Exception):
+    def __init__(self):
+        super().__init__('The game has already over.')
 
 class Class2048:
     sq = [[0, 0, 0, 0],
@@ -13,6 +15,7 @@ class Class2048:
           [0, 0, 0, 0],
           [0, 0, 0, 0]]
     score = 0
+    over = False
 
     def __init__(self):
         self.__randomSpawn()
@@ -137,7 +140,9 @@ class Class2048:
                     cnt -= 1
             self.sq[i] = line
 
-    def merge(self, direction):
+    def merge(self, direction): # 정상적으로 턴 넘기기에 성공하면 0, 게임이 끝났다면 -1
+        if(self.over):
+            raise FinishedGameError
         if(direction == 'up'):
             prv = copy.deepcopy(self.sq)
             self.__subMergeUp()
@@ -162,21 +167,7 @@ class Class2048:
             raise UndefinedDirectionError
 
         if(self.__isGameOver()):
-            print("Game Over")
+            over = True
+            return -1
         
-        # 합친 뒤 검사 실행
-
-
-a = Class2048()
-
-for i in range(0, 4):
-    for j in range(0, 4):
-        print(str(a.sq[i][j]).center(4), end='')
-        print(' ', end='')
-    print('')
-print()
-print(a.score)
-
-
-
-# 게임오버 만들기
+        return 0
