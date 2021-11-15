@@ -1,4 +1,3 @@
-from asyncio.windows_events import NULL
 import random
 import copy
 import math
@@ -17,12 +16,14 @@ class FinishedGameError(Exception):
         super().__init__('The game has already over.')
 
 class Class2048:
-    def __init__(self):
+    def __init__(self, msg_id):
         self.sq = copy.deepcopy([[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]])
         self.score = 0
         self.over = False
         self.__randomSpawn()
         self.__randomSpawn()
+
+        self.bot_msg_id = msg_id
 
     def __isGameOver(self):
         cnt = 0
@@ -207,16 +208,19 @@ def create_msg(m):
         buffer += '\n'
     return buffer
 
-emoji_cancel = {"id": NULL, "name": "✖️"}
+emoji_left = {"id": "909659546081959956", "name": "left"}
+emoji_up = {"id": "909659546304249867", "name": "up"}
+emoji_down = {"id": "909659546182631476", "name": "down"}
+emoji_right = {"id": "909659546295869450", "name": "right"}
+emoji_cancel = {"id": None, "name": "✖️"}
 
-async def interact(game):
+async def interact():
     while True:
         resp = await interaction.wait_interaction(timeout=600)
         if not resp.type.message_component or not resp.data.component_type.button:
             return
-        
+        game = games[int(resp.id)]
         id = resp.message.id
-
         res = 0
         if(resp.data.custom_id == f'left{id}'):
             res = game.merge('left')
@@ -226,10 +230,10 @@ async def interact(game):
             res = game.merge('down')
         elif(resp.data.custom_id == f'right{id}'):
             res = game.merge('right')        
-        left_button = dico.Button(style=dico.ButtonStyles.PRIMARY, label='🡨', custom_id=f"left{id}", disabled=True)
-        up_button = dico.Button(style=dico.ButtonStyles.PRIMARY, label='🡩', custom_id=f"up{id}", disabled=True)
-        down_button = dico.Button(style=dico.ButtonStyles.PRIMARY, label='🡫', custom_id=f"down{id}", disabled=True)
-        right_button = dico.Button(style=dico.ButtonStyles.PRIMARY, label='🡪', custom_id=f"right{id}", disabled=True)
+        left_button = dico.Button(style=dico.ButtonStyles.PRIMARY, emoji=emoji_left, custom_id=f"left{id}", disabled=True)
+        up_button = dico.Button(style=dico.ButtonStyles.PRIMARY, emoji=emoji_up, custom_id=f"up{id}", disabled=True)
+        down_button = dico.Button(style=dico.ButtonStyles.PRIMARY, emoji=emoji_down, custom_id=f"down{id}", disabled=True)
+        right_button = dico.Button(style=dico.ButtonStyles.PRIMARY, emoji=emoji_right, custom_id=f"right{id}", disabled=True)
         cancel_button = dico.Button(style=dico.ButtonStyles.DANGER, emoji=emoji_cancel, custom_id=f"cancel{id}", disabled=True)
         row = dico.ActionRow(left_button, up_button, down_button, right_button, cancel_button)
         if(resp.data.custom_id == f'cancel{id}'):
@@ -240,22 +244,25 @@ async def interact(game):
             return
         await resp.send(create_msg(game.sq), update_message=True)
 
+games = {}
+
 @interaction.slash(name="start", description="Starts a new game.")
 async def start(ctx: InteractionContext):
-    g = Class2048()
-    await ctx.send(create_msg(g.sq))
+    games[int(ctx.id)] = Class2048(int(ctx.id))
+    await ctx.send(create_msg(games[int(ctx.id)].sq))
     message = await ctx.request_original_response()
-    left_button = dico.Button(style=dico.ButtonStyles.PRIMARY, label='🡨', custom_id=f"left{message.id}")
-    up_button = dico.Button(style=dico.ButtonStyles.PRIMARY, label='🡩', custom_id=f"up{message.id}")
-    down_button = dico.Button(style=dico.ButtonStyles.PRIMARY, label='🡫', custom_id=f"down{message.id}")
-    right_button = dico.Button(style=dico.ButtonStyles.PRIMARY, label='🡪', custom_id=f"right{message.id}")
+    left_button = dico.Button(style=dico.ButtonStyles.PRIMARY, emoji=emoji_left, custom_id=f"left{message.id}")
+    up_button = dico.Button(style=dico.ButtonStyles.PRIMARY, emoji=emoji_up, custom_id=f"up{message.id}")
+    down_button = dico.Button(style=dico.ButtonStyles.PRIMARY, emoji=emoji_down, custom_id=f"down{message.id}")
+    right_button = dico.Button(style=dico.ButtonStyles.PRIMARY, emoji=emoji_right, custom_id=f"right{message.id}")
     cancel_button = dico.Button(style=dico.ButtonStyles.DANGER, emoji=emoji_cancel, custom_id=f"cancel{message.id}")
     row = dico.ActionRow(left_button, up_button, down_button, right_button, cancel_button)
-    await ctx.edit_original_response(content=create_msg(g.sq), components=[row])
+    await ctx.edit_original_response(content=create_msg(games[int(ctx.id)].sq), components=[row])
     try:
-        await asyncio.wait_for(interact(g), timeout=None)
+        await asyncio.wait_for(interact(), timeout=None)
     except asyncio.TimeoutError:
         await ctx.send('대충 타임아웃')
+    del games[int(ctx.id)]
 
 client.run()
 
