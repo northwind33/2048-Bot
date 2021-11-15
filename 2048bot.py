@@ -22,13 +22,13 @@ class Class2048:
         self.sq = [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]
         self.score = 0
         self.over = False
-        self.__randomSpawn()
-        self.__randomSpawn()
+        self.__random_spawn()
+        self.__random_spawn()
 
         self.bot_msg_id = msg_id
         self.author_id = author_id
 
-    def __isGameOver(self):
+    def __is_game_over(self):
         cnt = 0
         sw = [0, 1, -1]
         ne = [0, 1, -1]
@@ -38,147 +38,150 @@ class Class2048:
                 tmp_cnt, tmp_chk = 0, 0
                 for x in range(0, 3):
                     for y in range(0, 3):
-                        if (sw[x] + i > -1 and sw[x] + i < 4 and ne[y] + j > -1 and ne[y] + j < 4 and (
-                                abs(sw[x]) + abs(ne[y]) == 1)):
+                        if -1 < sw[x] + i < 4 and -1 < ne[y] + j < 4 and abs(sw[x]) + abs(ne[y]) == 1:
                             tmp_cnt += 1
-                            if (self.sq[sw[x] + i][ne[y] + j] != self.sq[i][j] and self.sq[sw[x] + i][ne[y] + j] != 0):
+                            if self.sq[sw[x] + i][ne[y] + j] != self.sq[i][j] and self.sq[sw[x] + i][ne[y] + j] != 0:
                                 tmp_chk += 1
-                if (tmp_chk == tmp_cnt):
+                if tmp_chk == tmp_cnt:
                     cnt += 1
-        if (cnt == 16):
+        if cnt == 16:
             return True
         return False
 
-    def __randomSpawn(self):
+    def __random_spawn(self):
         while True:
             a, b = random.randrange(0, 4), random.randrange(0, 4)
             spawn = [2, 2, 2, 2, 2, 2, 2, 2, 2, 4]
-            if (self.sq[a][b] == 0):
+            if self.sq[a][b] == 0:
                 self.sq[a][b] = random.choice(spawn)
                 break
 
-    def __subMergeUp(self):
+    def __sub_merge_up(self):
         for i in range(0, 4):
             line = []
-            for j in range(0, 4): line.append(self.sq[j][i])
+            for j in range(0, 4):
+                line.append(self.sq[j][i])
             cnt = 0
             for x in range(0, 4):
-                if (line[x] != 0):
+                if line[x] != 0:
                     line[cnt] = line[x]
-                    if (cnt != x):
+                    if cnt != x:
                         line[x] = 0
                     cnt += 1
             for x in range(0, 3):
-                if (line[x] == line[x + 1]):
+                if line[x] == line[x + 1]:
                     line[x], line[x + 1] = line[x] + line[x + 1], 0
                     self.score += line[x]
             cnt = 0
             for x in range(0, 4):
-                if (line[x] != 0):
+                if line[x] != 0:
                     line[cnt] = line[x]
-                    if (cnt != x):
+                    if cnt != x:
                         line[x] = 0
                     cnt += 1
-            for j in range(0, 4): self.sq[j][i] = line[j]
+            for j in range(0, 4):
+                self.sq[j][i] = line[j]
 
-    def __subMergeDown(self):
+    def __sub_merge_down(self):
         for i in range(0, 4):
             line = []
-            for j in range(0, 4): line.append(self.sq[j][i])
+            for j in range(0, 4):
+                line.append(self.sq[j][i])
             cnt = 3
             for x in range(3, -1, -1):
-                if (line[x] != 0):
+                if line[x] != 0:
                     line[cnt] = line[x]
-                    if (cnt != x):
+                    if cnt != x:
                         line[x] = 0
                     cnt -= 1
             for x in range(3, 0, -1):
-                if (line[x] == line[x - 1]):
+                if line[x] == line[x - 1]:
                     line[x], line[x - 1] = line[x] + line[x - 1], 0
                     self.score += line[x]
             cnt = 3
             for x in range(3, -1, -1):
-                if (line[x] != 0):
+                if line[x] != 0:
                     line[cnt] = line[x]
-                    if (cnt != x):
+                    if cnt != x:
                         line[x] = 0
                     cnt -= 1
-            for j in range(0, 4): self.sq[j][i] = line[j]
+            for j in range(0, 4):
+                self.sq[j][i] = line[j]
 
-    def __subMergeLeft(self):
+    def __sub_merge_left(self):
         for i in range(0, 4):
             line = self.sq[i]
             cnt = 0
             for x in range(0, 4):
-                if (line[x] != 0):
+                if line[x] != 0:
                     line[cnt] = line[x]
-                    if (cnt != x):
+                    if cnt != x:
                         line[x] = 0
                     cnt += 1
             for x in range(0, 3):
-                if (line[x] == line[x + 1]):
+                if line[x] == line[x + 1]:
                     line[x], line[x + 1] = line[x] + line[x + 1], 0
                     self.score += line[x]
             cnt = 0
             for x in range(0, 4):
-                if (line[x] != 0):
+                if line[x] != 0:
                     line[cnt] = line[x]
-                    if (cnt != x):
+                    if cnt != x:
                         line[x] = 0
                     cnt += 1
             self.sq[i] = line
 
-    def __subMergeRight(self):
+    def __sub_merge_right(self):
         for i in range(0, 4):
             line = self.sq[i]
             cnt = 3
             for x in range(3, -1, -1):
-                if (line[x] != 0):
+                if line[x] != 0:
                     line[cnt] = line[x]
-                    if (cnt != x):
+                    if cnt != x:
                         line[x] = 0
                     cnt -= 1
             for x in range(3, 0, -1):
-                if (line[x] == line[x - 1]):
+                if line[x] == line[x - 1]:
                     line[x], line[x - 1] = line[x] + line[x - 1], 0
                     self.score += line[x]
             cnt = 3
             for x in range(3, -1, -1):
-                if (line[x] != 0):
+                if line[x] != 0:
                     line[cnt] = line[x]
-                    if (cnt != x):
+                    if cnt != x:
                         line[x] = 0
                     cnt -= 1
             self.sq[i] = line
 
     def merge(self, direction):
-        if (self.over):
+        if self.over:
             raise FinishedGameError
-        if (direction == 'up'):
+        if direction == 'up':
             prv = copy.deepcopy(self.sq)
-            self.__subMergeUp()
-            if (not prv == self.sq):
-                self.__randomSpawn()
-        elif (direction == 'down'):
+            self.__sub_merge_up()
+            if not prv == self.sq:
+                self.__random_spawn()
+        elif direction == 'down':
             prv = copy.deepcopy(self.sq)
-            self.__subMergeDown()
-            if (not prv == self.sq):
-                self.__randomSpawn()
-        elif (direction == 'left'):
+            self.__sub_merge_down()
+            if not prv == self.sq:
+                self.__random_spawn()
+        elif direction == 'left':
             prv = copy.deepcopy(self.sq)
-            self.__subMergeLeft()
-            if (not prv == self.sq):
-                self.__randomSpawn()
-        elif (direction == 'right'):
+            self.__sub_merge_left()
+            if not prv == self.sq:
+                self.__random_spawn()
+        elif direction == 'right':
             prv = copy.deepcopy(self.sq)
-            self.__subMergeRight()
-            if (not prv == self.sq):
-                self.__randomSpawn()
+            self.__sub_merge_right()
+            if not prv == self.sq:
+                self.__random_spawn()
         else:
             raise UndefinedDirectionError
 
-        if (self.__isGameOver()):
-            over = True
+        if self.__is_game_over():
+            self.over = True
             return -1
 
         return 0
@@ -225,11 +228,16 @@ emoji_cancel = "✖"
 
 
 def create_buttons(message_id, disabled=False):
-    left_button = dico.Button(style=dico.ButtonStyles.PRIMARY, emoji=emoji_left, custom_id=f"left{message_id}", disabled=disabled)
-    up_button = dico.Button(style=dico.ButtonStyles.PRIMARY, emoji=emoji_up, custom_id=f"up{message_id}", disabled=disabled)
-    down_button = dico.Button(style=dico.ButtonStyles.PRIMARY, emoji=emoji_down, custom_id=f"down{message_id}", disabled=disabled)
-    right_button = dico.Button(style=dico.ButtonStyles.PRIMARY, emoji=emoji_right, custom_id=f"right{message_id}", disabled=disabled)
-    cancel_button = dico.Button(style=dico.ButtonStyles.DANGER, emoji=emoji_cancel, custom_id=f"cancel{message_id}", disabled=disabled)
+    left_button = dico.Button(style=dico.ButtonStyles.PRIMARY, emoji=emoji_left, custom_id=f"left{message_id}",
+                              disabled=disabled)
+    up_button = dico.Button(style=dico.ButtonStyles.PRIMARY, emoji=emoji_up, custom_id=f"up{message_id}",
+                            disabled=disabled)
+    down_button = dico.Button(style=dico.ButtonStyles.PRIMARY, emoji=emoji_down, custom_id=f"down{message_id}",
+                              disabled=disabled)
+    right_button = dico.Button(style=dico.ButtonStyles.PRIMARY, emoji=emoji_right, custom_id=f"right{message_id}",
+                               disabled=disabled)
+    cancel_button = dico.Button(style=dico.ButtonStyles.DANGER, emoji=emoji_cancel, custom_id=f"cancel{message_id}",
+                                disabled=disabled)
     row = dico.ActionRow(left_button, up_button, down_button, right_button, cancel_button)
     return row
 
@@ -255,7 +263,7 @@ async def on_interaction_error(inter: InteractionContext, ex: Exception):
 
 
 @interaction.component_callback("cancel")
-async def cancel_button(ctx: InteractionContext):
+async def cancel_callback(ctx: InteractionContext):
     game = games.pop(int(ctx.message.id))
     if ctx.author.id != game.author_id:
         return await ctx.send("This is not your session!", ephemeral=True)
@@ -264,7 +272,7 @@ async def cancel_button(ctx: InteractionContext):
 
 
 @interaction.component_callback("left")
-async def left_button(ctx: InteractionContext):
+async def left_callback(ctx: InteractionContext):
     if not ctx.data.component_type.button:
         return
     game = games[int(ctx.message.id)]
@@ -278,7 +286,7 @@ async def left_button(ctx: InteractionContext):
 
 
 @interaction.component_callback("up")
-async def up_button(ctx: InteractionContext):
+async def up_callback(ctx: InteractionContext):
     if not ctx.data.component_type.button:
         return
     game = games[int(ctx.message.id)]
@@ -292,7 +300,7 @@ async def up_button(ctx: InteractionContext):
 
 
 @interaction.component_callback("down")
-async def down_button(ctx: InteractionContext):
+async def down_callback(ctx: InteractionContext):
     if not ctx.data.component_type.button:
         return
     game = games[int(ctx.message.id)]
@@ -306,7 +314,7 @@ async def down_button(ctx: InteractionContext):
 
 
 @interaction.component_callback("right")
-async def right_button(ctx: InteractionContext):
+async def right_callback(ctx: InteractionContext):
     if not ctx.data.component_type.button:
         return
     game = games[int(ctx.message.id)]
