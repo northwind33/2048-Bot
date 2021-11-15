@@ -2,9 +2,8 @@ import random
 import copy
 import math
 import dico
-import asyncio
-from dico import emoji
-from dico import Message
+import traceback
+import sys
 from dico_interaction import InteractionClient, InteractionContext
 
 
@@ -19,7 +18,7 @@ class FinishedGameError(Exception):
 
 
 class Class2048:
-    def __init__(self, msg_id):
+    def __init__(self, msg_id, author_id):
         self.sq = [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]
         self.score = 0
         self.over = False
@@ -27,6 +26,7 @@ class Class2048:
         self.__randomSpawn()
 
         self.bot_msg_id = msg_id
+        self.author_id = author_id
 
     def __isGameOver(self):
         cnt = 0
@@ -237,51 +237,95 @@ def create_buttons(message_id, disabled=False):
 games = {}
 
 
-def check(message_id):
-    def wrap(inter: InteractionContext):
-        return inter.type.message_component and inter.data.component_type.button and inter.data.custom_id.endswith(str(message_id))
-    return wrap
+async def game_over(inter, game):
+    await inter.send(create_msg(game.sq) + '\nGame Over! Your final score is: ' + str(game.score),
+                     components=[create_buttons(inter.message.id, disabled=True)])
+    del games[int(inter.message.id)]
 
 
-async def interact(author_id, message_id):
-    while True:
-        resp = await interaction.wait_interaction(timeout=600, check=check(message_id))
-        if resp.author.id != author_id:
-            client.loop.create_task(resp.send("This is not your session!", ephemeral=True))
-            continue
-        game = games[int(resp.message.id)]
-        res = 0
-        if resp.data.custom_id.startswith("left"):
-            res = game.merge('left')
-        elif resp.data.custom_id.startswith("up"):
-            res = game.merge('up')
-        elif resp.data.custom_id.startswith("down"):
-            res = game.merge('down')
-        elif resp.data.custom_id.startswith("right"):
-            res = game.merge('right')
-        if resp.data.custom_id.startswith("cancel"):
-            await resp.send(create_msg(game.sq) + '\nThis game is cancelled. Score: ' + str(game.score),
-                            update_message=True, components=[create_buttons(resp.message.id, disabled=True)])
-            return
-        if res == -1:
-            await resp.send(create_msg(game.sq) + '\nGame Over! Your final score is: ' + str(game.score),
-                            update_message=True, components=[create_buttons(resp.message.id, disabled=True)])
-            return
-        await resp.send(create_msg(game.sq), update_message=True)
+@client.on()
+async def on_interaction_error(inter: InteractionContext, ex: Exception):
+    if isinstance(ex, KeyError):
+        await inter.send("Invalid game session. Start new game.")
+    else:
+        tb = ''.join(traceback.format_exception(type(ex), ex, ex.__traceback__))
+        title = f"Exception while executing command {inter.data.name}" if inter.type.application_command else \
+            f"Exception while executing callback of {inter.data.custom_id}"
+        print(f"{title}:\n{tb}", file=sys.stderr)
+
+
+@interaction.component_callback("cancel")
+async def cancel_button(ctx: InteractionContext):
+    game = games.pop(int(ctx.message.id))
+    if ctx.author.id != game.author_id:
+        return await ctx.send("This is not your session!", ephemeral=True)
+    await ctx.send(create_msg(game.sq) + '\nThis game is cancelled. Score: ' + str(game.score),
+                   update_message=True, components=[create_buttons(ctx.message.id, disabled=True)])
+
+
+@interaction.component_callback("left")
+async def left_button(ctx: InteractionContext):
+    if not ctx.data.component_type.button:
+        return
+    game = games[int(ctx.message.id)]
+    if ctx.author.id != game.author_id:
+        return await ctx.send("This is not your session!", ephemeral=True)
+    res = game.merge('left')
+    if res == -1:
+        await game_over(ctx, game)
+    else:
+        await ctx.send(create_msg(game.sq), update_message=True)
+
+
+@interaction.component_callback("up")
+async def up_button(ctx: InteractionContext):
+    if not ctx.data.component_type.button:
+        return
+    game = games[int(ctx.message.id)]
+    if ctx.author.id != game.author_id:
+        return await ctx.send("This is not your session!", ephemeral=True)
+    res = game.merge('up')
+    if res == -1:
+        await game_over(ctx, game)
+    else:
+        await ctx.send(create_msg(game.sq), update_message=True)
+
+
+@interaction.component_callback("down")
+async def down_button(ctx: InteractionContext):
+    if not ctx.data.component_type.button:
+        return
+    game = games[int(ctx.message.id)]
+    if ctx.author.id != game.author_id:
+        return await ctx.send("This is not your session!", ephemeral=True)
+    res = game.merge('down')
+    if res == -1:
+        await game_over(ctx, game)
+    else:
+        await ctx.send(create_msg(game.sq), update_message=True)
+
+
+@interaction.component_callback("right")
+async def right_button(ctx: InteractionContext):
+    if not ctx.data.component_type.button:
+        return
+    game = games[int(ctx.message.id)]
+    if ctx.author.id != game.author_id:
+        return await ctx.send("This is not your session!", ephemeral=True)
+    res = game.merge('right')
+    if res == -1:
+        await game_over(ctx, game)
+    else:
+        await ctx.send(create_msg(game.sq), update_message=True)
 
 
 @interaction.slash(name="start", description="Starts a new game.")
 async def start(ctx: InteractionContext):
     await ctx.defer()
     msg = await ctx.request_original_response()
-    games[int(msg)] = Class2048(int(msg))
+    games[int(msg)] = Class2048(int(msg), int(ctx.author))
     await ctx.send(create_msg(games[int(msg)].sq))
     await ctx.edit_original_response(content=create_msg(games[int(msg)].sq), components=[create_buttons(int(msg))])
-    try:
-        await asyncio.wait_for(interact(ctx.author.id, msg.id), timeout=None)
-    except asyncio.TimeoutError:
-        await ctx.send('대충 타임아웃')
-    del games[int(msg)]
 
 
 client.run()
